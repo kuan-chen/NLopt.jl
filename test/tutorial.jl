@@ -1,4 +1,5 @@
 using NLopt, Test
+using ForwardDiff
 
 count = 0 # keep track of # function evaluations
 
@@ -38,3 +39,41 @@ println("got $minf at $minx after $count iterations (returned $ret)")
 @test minf ≈ sqrt(8/27) rtol=1e-5
 @test ret == :XTOL_REACHED
 @test opt.numevals == count
+
+
+## a helpful way to organize the objective function with ForwardDiff
+solution_log = "./log_solutions.txt"
+
+function myfunc_1(x::Vector)
+    y = sqrt(x[2])
+    return y
+end
+
+function myfunc_2(x::Vector, grad::Vector)
+    if length(grad) > 0
+        grad[:] = ForwardDiff.gradient(myfunc_1, x) # in-place evaluation required.
+    end
+    if iszero(maximum(isnan.(grad))
+            grad_max = findmax(abs.(grad))
+            grad_val = grad_max[1]
+            grad_ind = grad_max[2]
+            println("    Max. abs. gradient at $grad_ind with value $grad_val.")
+    else
+            println("    Gradient has NaN elements.")
+            # We could switch finite differecing here, 
+            # but sometimes it's just quicker to let the current evaluation fail.
+    end
+        
+    global count
+    count::Int += 1
+    println("f_$count($x)")
+
+    y = sqrt(x[2])
+    
+    # record evaluations
+    open(solution_log, "a") do f
+            println(f, y, "    ", x')
+    end
+    
+    return y
+end
